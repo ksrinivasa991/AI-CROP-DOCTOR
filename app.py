@@ -6,15 +6,17 @@ A multimodal AI assistant that lets a farmer upload a photo of a diseased
 crop leaf and instantly get a diagnosis, an actionable treatment plan
 (organic + chemical), and the advice translated into a local language —
 with optional text-to-speech for low-literacy accessibility.
+
+Uses Google Gemini (free tier) for the multimodal AI call.
 """
 
-import base64
 import os
+import io
 
 import streamlit as st
-from anthropic import Anthropic
+import google.generativeai as genai
+from PIL import Image
 from gtts import gTTS
-import io
 
 # ----------------------------------------------------------------------
 # Config
@@ -25,7 +27,7 @@ st.set_page_config(
     layout="centered",
 )
 
-MODEL = "claude-sonnet-5"  # multimodal (vision) capable model
+MODEL = "gemini-2.0-flash"  # multimodal (vision) capable model, free tier
 
 LANGUAGES = {
     "English": "en",
@@ -37,27 +39,25 @@ LANGUAGES = {
 }
 
 
-def get_client():
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+def get_model():
+    api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
         st.error(
-            "No API key found. Set the ANTHROPIC_API_KEY environment variable "
+            "No API key found. Set the GEMINI_API_KEY environment variable "
             "before running the app (see README)."
         )
         st.stop()
-    return Anthropic(api_key=api_key)
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel(MODEL)
 
 
-def image_to_base64(uploaded_file):
-    """Read an uploaded image file and return (base64_str, media_type)."""
-    bytes_data = uploaded_file.getvalue()
-    media_type = uploaded_file.type or "image/jpeg"
-    b64 = base64.b64encode(bytes_data).decode("utf-8")
-    return b64, media_type
+def load_image(uploaded_file):
+    """Read an uploaded image file and return a PIL Image."""
+    return Image.open(uploaded_file)
 
 
-def diagnose(client, image_b64, media_type, symptoms_text, language):
-    """Call Claude's vision model to diagnose the crop disease."""
+def diagnose(model, image, symptoms_text, language):
+    """Call Gemini's vision model to diagnose the crop disease."""
     prompt = f"""You are an expert agricultural plant pathologist helping a
 farmer who may have limited literacy or technical background.
 
@@ -79,27 +79,8 @@ Keep language extremely simple and practical. Avoid jargon. If the image is
 unclear or doesn't show a plant, say so honestly instead of guessing.
 """
 
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=1200,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": image_b64,
-                        },
-                    },
-                    {"type": "text", "text": prompt},
-                ],
-            }
-        ],
-    )
-    return "".join(block.text for block in response.content if block.type == "text")
+    response = model.generate_content([prompt, image])
+    return response.text
 
 
 def text_to_speech(text, lang_code):
@@ -153,9 +134,9 @@ diagnose_clicked = st.button("🔍 Diagnose", type="primary", disabled=uploaded_
 
 if diagnose_clicked and uploaded_file is not None:
     with st.spinner("Analyzing the plant..."):
-        client = get_client()
-        img_b64, media_type = image_to_base64(uploaded_file)
-        result_text = diagnose(client, img_b64, media_type, symptoms_text, language_label)
+        model = get_model()
+        image = load_image(uploaded_file)
+        result_text = diagnose(model, image, symptoms_text, language_label)
 
     st.success("Diagnosis complete")
     st.markdown(result_text)
