@@ -103,15 +103,21 @@ unclear or doesn't show a plant, say so honestly instead of guessing.
     return response.choices[0].message.content
 
 
+import re
+
+
 def text_to_speech(text, lang_code):
     """Convert diagnosis text to speech audio bytes (mp3) using gTTS."""
     try:
-        tts = gTTS(text=text, lang=lang_code)
+        # Strip markdown symbols that can trip up the TTS engine
+        clean_text = re.sub(r"[*#_`]", "", text)
+        tts = gTTS(text=clean_text, lang=lang_code)
         buf = io.BytesIO()
         tts.write_to_fp(buf)
         buf.seek(0)
         return buf
-    except Exception:
+    except Exception as e:
+        st.caption(f"(Audio unavailable: {e})")
         return None
 
 
