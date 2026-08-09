@@ -13,6 +13,7 @@ Uses Groq (free tier, Llama 4 Scout vision model) for the multimodal AI call.
 import base64
 import os
 import io
+import re
 
 import streamlit as st
 from groq import Groq
@@ -97,13 +98,12 @@ unclear or doesn't show a plant, say so honestly instead of guessing.
                 ],
             }
         ],
-        max_tokens=1200,
-        reasoning_format="hidden",
+        max_tokens=2000,
     )
-    return response.choices[0].message.content
-
-
-import re
+    raw_text = response.choices[0].message.content or ""
+    # Strip any <think>...</think> reasoning block the model may include
+    clean_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+    return clean_text if clean_text else raw_text.strip()
 
 
 def text_to_speech(text, lang_code):
