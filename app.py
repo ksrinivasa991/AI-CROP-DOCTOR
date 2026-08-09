@@ -98,6 +98,7 @@ unclear or doesn't show a plant, say so honestly instead of guessing.
             }
         ],
         max_tokens=1200,
+        reasoning_format="hidden",
     )
     return response.choices[0].message.content
 
