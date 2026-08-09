@@ -98,10 +98,11 @@ unclear or doesn't show a plant, say so honestly instead of guessing.
                 ],
             }
         ],
-        max_tokens=2000,
+        max_tokens=1200,
+        reasoning_effort="none",
     )
     raw_text = response.choices[0].message.content or ""
-    # Strip any <think>...</think> reasoning block the model may include
+    # Safety net: strip any <think>...</think> block if the model adds one anyway
     clean_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
     return clean_text if clean_text else raw_text.strip()
 
