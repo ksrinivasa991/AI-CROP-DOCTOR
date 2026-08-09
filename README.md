@@ -28,7 +28,7 @@ underserved user groups: farmers.
 
 ## Tech Stack
 - **Frontend:** Streamlit (fast, clean, demo-ready UI)
-- **AI:** Anthropic Claude (multimodal vision + language model) for
+- **AI:** Google Gemini (multimodal vision + language model, free tier) for
   diagnosis, explanation, and translation in a single call
 - **Accessibility:** gTTS (Google Text-to-Speech) for audio output
 - **Language:** Python
@@ -50,9 +50,9 @@ underserved user groups: farmers.
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Set your Anthropic API key
-export ANTHROPIC_API_KEY="your-key-here"      # macOS/Linux
-setx ANTHROPIC_API_KEY "your-key-here"        # Windows
+# 2. Set your Gemini API key (get one free at aistudio.google.com/apikey)
+export GEMINI_API_KEY="your-key-here"         # macOS/Linux
+setx GEMINI_API_KEY "your-key-here"           # Windows
 
 # 3. Run the app
 streamlit run app.py
